@@ -1,0 +1,227 @@
+{
+  "projectName": "KAGAN",
+  "tagline": "Private AI for Sales Execution",
+
+  "vibe": {
+    "overall": "Enterprise B2B SaaS — clean, minimal, dark-mode-first. Premium revenue operations tool, not a consumer app. Understated and professional with lots of negative space, muted colors, no flashy gradients or illustrations. Think Linear meets a sales ops platform.",
+    "tone": "Confident, direct, no-fluff. Written for revenue leaders and ops teams. Avoids hype words. Uses phrases like 'sales execution layer', 'governed handoffs', 'pipeline health'.",
+    "feel": "Quiet authority. The design doesn't try to impress — it communicates competence. Monochrome palette says 'we're serious'. Generous whitespace says 'we're not desperate for your attention'."
+  },
+
+  "visualIdentity": {
+    "defaultTheme": "dark (hardcoded class='dark' on html element)",
+    "fonts": {
+      "sans": "Geist (primary — headings and body)",
+      "mono": "Geist Mono (code/data contexts)",
+      "heading": "Same as sans"
+    },
+    "iconLibrary": "Lucide React",
+    "uiSystem": "shadcn/ui (base-nova style) + Radix primitives + Tailwind CSS v4",
+    "borderRadius": "0.625rem base, scaled with multipliers (0.6x–2.6x)",
+    "logoTreatment": "Plain text 'KAGAN' — font-semibold tracking-tight, no icon or graphic"
+  },
+
+  "colorSystem": {
+    "approach": "oklch color space, fully monochrome/neutral (zero chroma). Only splashes of color: destructive red and one blue sidebar accent in dark mode.",
+    "lightMode": {
+      "background": "oklch(1 0 0)",
+      "foreground": "oklch(0.145 0 0)",
+      "card": "oklch(1 0 0)",
+      "cardForeground": "oklch(0.145 0 0)",
+      "primary": "oklch(0.205 0 0)",
+      "primaryForeground": "oklch(0.985 0 0)",
+      "secondary": "oklch(0.97 0 0)",
+      "secondaryForeground": "oklch(0.205 0 0)",
+      "muted": "oklch(0.97 0 0)",
+      "mutedForeground": "oklch(0.556 0 0)",
+      "accent": "oklch(0.97 0 0)",
+      "accentForeground": "oklch(0.205 0 0)",
+      "destructive": "oklch(0.577 0.245 27.325)",
+      "border": "oklch(0.922 0 0)",
+      "input": "oklch(0.922 0 0)",
+      "ring": "oklch(0.708 0 0)",
+      "charts": {
+        "chart1": "oklch(0.87 0 0)",
+        "chart2": "oklch(0.556 0 0)",
+        "chart3": "oklch(0.439 0 0)",
+        "chart4": "oklch(0.371 0 0)",
+        "chart5": "oklch(0.269 0 0)"
+      },
+      "sidebar": {
+        "background": "oklch(0.985 0 0)",
+        "foreground": "oklch(0.145 0 0)",
+        "primary": "oklch(0.205 0 0)",
+        "primaryForeground": "oklch(0.985 0 0)",
+        "accent": "oklch(0.97 0 0)",
+        "accentForeground": "oklch(0.205 0 0)",
+        "border": "oklch(0.922 0 0)",
+        "ring": "oklch(0.708 0 0)"
+      }
+    },
+    "darkMode": {
+      "background": "oklch(0.145 0 0)",
+      "foreground": "oklch(0.985 0 0)",
+      "card": "oklch(0.205 0 0)",
+      "cardForeground": "oklch(0.985 0 0)",
+      "primary": "oklch(0.922 0 0)",
+      "primaryForeground": "oklch(0.205 0 0)",
+      "secondary": "oklch(0.269 0 0)",
+      "secondaryForeground": "oklch(0.985 0 0)",
+      "muted": "oklch(0.269 0 0)",
+      "mutedForeground": "oklch(0.708 0 0)",
+      "accent": "oklch(0.269 0 0)",
+      "accentForeground": "oklch(0.985 0 0)",
+      "destructive": "oklch(0.704 0.191 22.216)",
+      "border": "oklch(1 0 0 / 10%)",
+      "input": "oklch(1 0 0 / 15%)",
+      "ring": "oklch(0.556 0 0)",
+      "charts": {
+        "chart1": "oklch(0.87 0 0)",
+        "chart2": "oklch(0.556 0 0)",
+        "chart3": "oklch(0.439 0 0)",
+        "chart4": "oklch(0.371 0 0)",
+        "chart5": "oklch(0.269 0 0)"
+      },
+      "sidebar": {
+        "background": "oklch(0.205 0 0)",
+        "foreground": "oklch(0.985 0 0)",
+        "primary": "oklch(0.488 0.243 264.376)",
+        "primaryForeground": "oklch(0.985 0 0)",
+        "accent": "oklch(0.269 0 0)",
+        "accentForeground": "oklch(0.985 0 0)",
+        "border": "oklch(1 0 0 / 10%)",
+        "ring": "oklch(0.556 0 0)"
+      }
+    }
+  },
+
+  "landingPage": {
+    "sectionOrder": ["HeroSection", "FeatureCards", "PricingSection", "MarketingCta"],
+    "wrappedIn": {
+      "navbar": {
+        "logo": "KAGAN (plain text, font-semibold tracking-tight)",
+        "links": ["Pricing", "Contact"],
+        "actions": ["Log in (outline button)", "Dashboard (solid, when authenticated)"],
+        "extras": "Language switcher (en/tr/fr/de), mobile sheet menu",
+        "style": "Sticky top-0, h-14, border-b border-border/60, backdrop-blur bg-background/80"
+      },
+      "footer": {
+        "layout": "3-column grid",
+        "col1": "KAGAN + tagline: 'Private AI for sales execution and lead conversion.'",
+        "col2": "Product links: Pricing, Contact",
+        "col3": "Legal: Privacy, Terms (both disabled/placeholder)",
+        "copyright": "© {year} KAGAN. All rights reserved.",
+        "style": "border-t border-border/60, bg-card/30, py-12"
+      }
+    },
+    "hero": {
+      "eyebrow": "Private AI · Sales execution",
+      "title": "Always-on lead capture and conversion",
+      "subtitle": "KAGAN runs your sales motion when your team is in meetings—structured capture, on-brand automated replies, and governed handoffs to humans.",
+      "primaryCta": "Book a conversation",
+      "secondaryCta": "View pricing",
+      "visualEffect": "Subtle radial gradient overlay — ellipse 80% 50% at 50% -20%, rgba(120,119,198,0.18) fading to transparent",
+      "layout": "Left-aligned text block. Eyebrow → H1 (max-w-3xl) → subtitle (max-w-2xl) → two buttons in a row. Section has border-b, generous padding (pt-16 pb-20, sm: pt-24 pb-28)."
+    },
+    "features": {
+      "sectionTitle": "Built for revenue operations",
+      "sectionSubtitle": "Workflow automation tied to your pipeline—not a generic chat window.",
+      "layout": "2-column grid (sm+), single column mobile. Section bordered top and bottom.",
+      "cards": [
+        {
+          "icon": "Inbox",
+          "title": "Lead capture",
+          "description": "Ingest inbound interest from forms and connected channels with fields mapped to your CRM stages."
+        },
+        {
+          "icon": "MessageSquare",
+          "title": "Automated replies",
+          "description": "Acknowledgment, scheduling nudges, and follow-up cadences that match your tone and policies."
+        },
+        {
+          "icon": "GitBranch",
+          "title": "Workflow automation",
+          "description": "Routing, qualification prompts, and clear rules for when a deal needs a human owner."
+        },
+        {
+          "icon": "BarChart3",
+          "title": "Activity visibility",
+          "description": "Response times, funnel movement, and audit-friendly views of what KAGAN executed."
+        }
+      ],
+      "cardStyle": "border-border/60, bg-card/40, hover:border-border with transition. Icon sits in a 40px square with rounded-lg border and bg-background/50."
+    },
+    "pricing": {
+      "sectionTitle": "Straightforward pricing",
+      "sectionSubtitle": "One plan. Full platform access. Custom integrations billed only when you need them.",
+      "mainPlan": {
+        "name": "KAGAN Platform",
+        "price": "$700",
+        "period": "/month",
+        "description": "Private AI sales execution, standard integrations, dashboard, and reporting.",
+        "included": [
+          "Conversation handling and workflow automation",
+          "Lead capture and automated replies",
+          "Dashboard and sales activity reporting",
+          "Standard catalog integrations (CRM, email, calendar)"
+        ],
+        "cta": "Talk to sales",
+        "footnote": "Volume limits and enterprise options available during onboarding.",
+        "cardStyle": "border-primary/25, bg-card/50, full width. Price is text-4xl font-semibold. Checkmark list with Lucide Check icon."
+      },
+      "customIntegrations": {
+        "label": "Custom integrations",
+        "price": "+$100",
+        "period": "/month each",
+        "description": "Tailored connections to proprietary tools, legacy systems, or non-catalog APIs.",
+        "cardStyle": "border-dashed, bg-muted/20, full width. Smaller price text-2xl."
+      }
+    },
+    "bottomCta": {
+      "title": "Ready to run conversion as infrastructure?",
+      "subtitle": "Share your stack and pipeline—we'll map standard integrations and flag anything that needs a custom build.",
+      "button": "Book a conversation",
+      "layout": "Flex row on sm+ — text block left, button right. border-t, bg-muted/20, py-16."
+    }
+  },
+
+  "designPatterns": {
+    "sectionDividers": "Thin borders: border-b border-border/40 or border-t border-border/40. Never thick lines or colored dividers.",
+    "cardStyle": "Semi-transparent backgrounds (bg-card/40, bg-card/50, bg-muted/20). Faint borders (border-border/60). Subtle hover: border goes slightly more visible. No shadows.",
+    "contentWidth": "max-w-6xl (1152px) mx-auto px-4 sm:px-6",
+    "sectionSpacing": "py-20 sm:py-24 for marketing sections. p-4 md:p-6 for dashboard areas.",
+    "typography": {
+      "h1": "text-4xl sm:text-5xl font-semibold tracking-tight",
+      "h2": "text-3xl font-semibold tracking-tight",
+      "h3": "text-xl or text-lg (context-dependent)",
+      "body": "text-lg text-muted-foreground (marketing), text-sm (dashboard/app)",
+      "eyebrow": "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground",
+      "footerLabels": "text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+    },
+    "buttons": {
+      "primary": "size='lg', solid dark fill",
+      "secondary": "size='lg', variant='outline'",
+      "withArrow": "gap-2 with ArrowRight icon (size-4)"
+    },
+    "emptyStates": "Dashed border card with centered icon, title, description, optional CTA",
+    "responsiveness": "Mobile-first. Single col → 2-col on sm. Navbar collapses to sheet menu. Dashboard sidebar hides on mobile.",
+    "transparency": "Backgrounds and borders consistently use opacity — bg-card/40, bg-background/80, border-border/60. Creates depth without heavy layering."
+  },
+
+  "brandCopyAndMessaging": {
+    "brandVoice": "Enterprise-grade, zero buzzwords. Speaks to ops teams and revenue leaders who are tired of vaporware. Uses specific operational language: 'sales execution', 'pipeline', 'governed handoffs', 'revenue operations', 'audit-friendly'.",
+    "heroMessage": "Always-on lead capture and conversion",
+    "valuePropositions": [
+      "Runs your sales motion when your team is in meetings",
+      "Structured capture mapped to CRM stages",
+      "On-brand automated replies matching your tone and policies",
+      "Governed handoffs to humans with clear rules",
+      "Audit-friendly activity visibility"
+    ],
+    "ctaStyle": "Action-oriented but not aggressive: 'Book a conversation', 'Talk to sales', 'View pricing'. Never 'Get started free', 'Try now', or 'Sign up'. Implies a sales-led motion, not product-led growth.",
+    "contactPageTone": "Professional B2B: 'Tell us about your stack and pipeline. We'll follow up with next steps and integration scope.'",
+    "pricingPhilosophy": "Transparent and simple. One plan, one price, add-ons clearly explained. 'Straightforward pricing' — no tiers, no feature gating, no calculator.",
+    "conversionMessage": "Ready to run conversion as infrastructure?",
+    "footerTagline": "Private AI for sales execution and lead conversion."
+  }
+}
