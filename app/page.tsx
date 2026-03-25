@@ -10,7 +10,52 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import Link from "next/link";
+import { useState, useEffect, useRef, type RefObject } from "react";
+
+// ── Animation hooks ──────────────────────────────────────────────────
+
+function useMount() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+  return mounted;
+}
+
+function useReveal<T extends HTMLElement>(
+  threshold = 0.15
+): [RefObject<T | null>, boolean] {
+  const ref = useRef<T | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return [ref, visible];
+}
+
+// Base classes for reveal animations
+const hidden = "opacity-0 translate-y-5";
+const shown = "opacity-100 translate-y-0";
+
+// ── Components ───────────────────────────────────────────────────────
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,7 +67,6 @@ function Navbar() {
           KAGAN
         </a>
 
-        {/* Desktop nav */}
         <nav className="hidden items-center gap-6 sm:flex">
           <a
             href="#pricing"
@@ -36,15 +80,14 @@ function Navbar() {
           >
             Contact
           </a>
-          <a
+          <Link
             href="/login"
             className="inline-flex h-9 items-center rounded-[var(--radius)] border border-border/60 px-4 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             Log in
-          </a>
+          </Link>
         </nav>
 
-        {/* Mobile toggle */}
         <button
           className="sm:hidden p-2 text-muted-foreground hover:text-foreground"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -54,7 +97,6 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
         <div className="border-b border-border/60 bg-background/95 backdrop-blur sm:hidden">
           <nav className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4">
@@ -86,9 +128,10 @@ function Navbar() {
 }
 
 function HeroSection() {
+  const mounted = useMount();
+
   return (
     <section className="relative border-b border-border/40">
-      {/* Subtle radial gradient */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -98,18 +141,34 @@ function HeroSection() {
       />
 
       <div className="relative mx-auto max-w-6xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24 sm:pb-28">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        <p
+          className={`text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground transition-all duration-400
+            ${mounted ? shown : hidden}
+          `}
+        >
           Private AI · Sales execution
         </p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+        <h1
+          className={`mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl transition-all duration-400 delay-75
+            ${mounted ? shown : hidden}
+          `}
+        >
           Always-on lead capture and conversion
         </h1>
-        <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
+        <p
+          className={`mt-6 max-w-2xl text-lg text-muted-foreground transition-all duration-400 delay-150
+            ${mounted ? shown : hidden}
+          `}
+        >
           KAGAN runs your sales motion when your team is in
           meetings—structured capture, on-brand automated replies, and
           governed handoffs to humans.
         </p>
-        <div className="mt-8 flex flex-wrap gap-4">
+        <div
+          className={`mt-8 flex flex-wrap gap-4 transition-all duration-400 delay-200
+            ${mounted ? shown : hidden}
+          `}
+        >
           <a
             href="#contact"
             className="inline-flex h-11 items-center gap-2 rounded-[var(--radius)] bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -157,22 +216,35 @@ const features = [
 ];
 
 function FeaturesSection() {
+  const [ref, visible] = useReveal<HTMLDivElement>();
+
   return (
     <section className="border-b border-border/40">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-        <h2 className="text-3xl font-semibold tracking-tight">
+      <div ref={ref} className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+        <h2
+          className={`text-3xl font-semibold tracking-tight transition-all duration-500
+            ${visible ? shown : hidden}
+          `}
+        >
           Built for revenue operations
         </h2>
-        <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
+        <p
+          className={`mt-3 max-w-2xl text-lg text-muted-foreground transition-all duration-500 delay-75
+            ${visible ? shown : hidden}
+          `}
+        >
           Workflow automation tied to your pipeline—not a generic chat
           window.
         </p>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2">
-          {features.map((f) => (
+          {features.map((f, i) => (
             <div
               key={f.title}
-              className="group rounded-[var(--radius)] border border-border/60 bg-card/40 p-6 transition-colors hover:border-border"
+              className={`group rounded-[var(--radius)] border border-border/60 bg-card/40 p-6 transition-all duration-500 hover:border-border
+                ${visible ? shown : hidden}
+              `}
+              style={{ transitionDelay: visible ? `${150 + i * 100}ms` : "0ms" }}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border/60 bg-background/50">
                 <f.icon size={20} className="text-muted-foreground" />
@@ -190,20 +262,34 @@ function FeaturesSection() {
 }
 
 function PricingSection() {
+  const [ref, visible] = useReveal<HTMLDivElement>();
+
   return (
     <section id="pricing" className="border-b border-border/40 scroll-mt-14">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-        <h2 className="text-3xl font-semibold tracking-tight">
+      <div ref={ref} className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+        <h2
+          className={`text-3xl font-semibold tracking-tight transition-all duration-500
+            ${visible ? shown : hidden}
+          `}
+        >
           Straightforward pricing
         </h2>
-        <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
+        <p
+          className={`mt-3 max-w-2xl text-lg text-muted-foreground transition-all duration-500 delay-75
+            ${visible ? shown : hidden}
+          `}
+        >
           One plan. Full platform access. Custom integrations billed only
           when you need them.
         </p>
 
         <div className="mt-12 space-y-6">
-          {/* Main plan */}
-          <div className="rounded-[var(--radius)] border border-primary/25 bg-card/50 p-6 sm:p-8">
+          <div
+            className={`rounded-[var(--radius)] border border-primary/25 bg-card/50 p-6 sm:p-8 transition-all duration-500
+              ${visible ? shown : hidden}
+            `}
+            style={{ transitionDelay: visible ? "150ms" : "0ms" }}
+          >
             <div className="flex flex-wrap items-baseline gap-2">
               <h3 className="text-xl font-semibold">KAGAN Platform</h3>
             </div>
@@ -244,8 +330,12 @@ function PricingSection() {
             </p>
           </div>
 
-          {/* Custom integrations */}
-          <div className="rounded-[var(--radius)] border border-dashed border-border/60 bg-muted/20 p-6 sm:p-8">
+          <div
+            className={`rounded-[var(--radius)] border border-dashed border-border/60 bg-muted/20 p-6 sm:p-8 transition-all duration-500
+              ${visible ? shown : hidden}
+            `}
+            style={{ transitionDelay: visible ? "250ms" : "0ms" }}
+          >
             <div className="flex flex-wrap items-baseline gap-3">
               <h3 className="text-lg font-semibold">Custom integrations</h3>
               <div className="flex items-baseline gap-1">
@@ -267,11 +357,17 @@ function PricingSection() {
 }
 
 function CtaSection() {
+  const [ref, visible] = useReveal<HTMLDivElement>();
+
   return (
     <section id="contact" className="border-t border-border/40 bg-muted/20 scroll-mt-14">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <div ref={ref} className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="grid gap-10 sm:grid-cols-2 sm:gap-16">
-          <div>
+          <div
+            className={`transition-all duration-500
+              ${visible ? shown : hidden}
+            `}
+          >
             <h2 className="text-3xl font-semibold tracking-tight">
               Ready to run conversion as infrastructure?
             </h2>
@@ -282,7 +378,10 @@ function CtaSection() {
           </div>
 
           <form
-            className="space-y-4"
+            className={`space-y-4 transition-all duration-500
+              ${visible ? shown : hidden}
+            `}
+            style={{ transitionDelay: visible ? "120ms" : "0ms" }}
             onSubmit={(e) => e.preventDefault()}
           >
             <div className="grid gap-4 sm:grid-cols-2">
