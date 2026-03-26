@@ -36,7 +36,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/dashboard?welcome=true");
     router.refresh();
   }
 

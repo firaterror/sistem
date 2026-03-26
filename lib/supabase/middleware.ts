@@ -25,15 +25,16 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh the session — important for Server Components
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+
   // Redirect unauthenticated users away from protected routes
   if (
     !user &&
-    request.nextUrl.pathname.startsWith("/dashboard")
+    (pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding"))
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -43,12 +44,26 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (
     user &&
-    (request.nextUrl.pathname === "/login" ||
-      request.nextUrl.pathname === "/register")
+    (pathname === "/login" || pathname === "/register")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // Check onboarding status for authenticated users on dashboard
+  if (user && pathname.startsWith("/dashboard")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .single();
+
+    if (profile && !profile.onboarding_completed) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

@@ -387,7 +387,7 @@ function CtaSection() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label htmlFor="name" className="block text-sm font-medium pb-1">
-                  Name
+                  Full Name
                 </label>
                 <input
                   id="name"

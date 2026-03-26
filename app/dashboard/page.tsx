@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LogOut } from "lucide-react";
+import { VerifiedToast, WelcomeToast } from "./verified-toast";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ verified?: string; welcome?: string }>;
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -10,6 +15,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  const { verified, welcome } = await searchParams;
   const firstName = user.user_metadata?.first_name || "there";
 
   return (
@@ -39,6 +45,9 @@ export default async function DashboardPage() {
           </p>
         </div>
       </main>
+
+      {verified === "true" && <VerifiedToast />}
+      {welcome === "true" && <WelcomeToast />}
     </div>
   );
 }
