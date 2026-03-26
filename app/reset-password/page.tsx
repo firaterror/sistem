@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const [mounted, setMounted] = useState(false);
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -22,13 +21,21 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
       setError(error.message);
@@ -51,22 +58,11 @@ export default function LoginPage() {
       />
 
       <div className="relative w-full max-w-sm">
-        <Link
-          href="/"
-          className={`mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-all hover:text-foreground
-            ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}
-          `}
-          style={{ transitionDuration: "500ms", transitionDelay: "0ms" }}
-        >
-          <ArrowLeft size={14} />
-          Back
-        </Link>
-
         <h1
           className={`text-2xl font-semibold tracking-tight transition-all
             ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}
           `}
-          style={{ transitionDuration: "500ms", transitionDelay: "80ms" }}
+          style={{ transitionDuration: "500ms", transitionDelay: "0ms" }}
         >
           KAGAN
         </h1>
@@ -74,9 +70,9 @@ export default function LoginPage() {
           className={`mt-1.5 text-sm text-muted-foreground transition-all
             ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}
           `}
-          style={{ transitionDuration: "500ms", transitionDelay: "140ms" }}
+          style={{ transitionDuration: "500ms", transitionDelay: "80ms" }}
         >
-          Sign in to your account
+          Choose a new password
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -90,18 +86,18 @@ export default function LoginPage() {
             className={`space-y-1.5 transition-all
               ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
             `}
-            style={{ transitionDuration: "500ms", transitionDelay: "220ms" }}
+            style={{ transitionDuration: "500ms", transitionDelay: "160ms" }}
           >
-            <label htmlFor="email" className="block text-sm font-medium pb-1">
-              Email
+            <label htmlFor="password" className="block text-sm font-medium pb-1">
+              New password
             </label>
             <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              autoComplete="email"
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="new-password"
               required
               className="flex h-10 w-full rounded-[var(--radius)] border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
             />
@@ -111,26 +107,18 @@ export default function LoginPage() {
             className={`space-y-1.5 transition-all
               ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
             `}
-            style={{ transitionDuration: "500ms", transitionDelay: "300ms" }}
+            style={{ transitionDuration: "500ms", transitionDelay: "240ms" }}
           >
-            <div className="flex items-center justify-between pb-1">
-              <label htmlFor="password" className="block text-sm font-medium">
-                Password
-              </label>
-              <Link
-                href="/forgot-password"
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Forgot password?
-              </Link>
-            </div>
+            <label htmlFor="confirm" className="block text-sm font-medium pb-1">
+              Confirm password
+            </label>
             <input
-              id="password"
+              id="confirm"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
               placeholder="••••••••"
-              autoComplete="current-password"
+              autoComplete="new-password"
               required
               className="flex h-10 w-full rounded-[var(--radius)] border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
             />
@@ -140,7 +128,7 @@ export default function LoginPage() {
             className={`pt-2 transition-all
               ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
             `}
-            style={{ transitionDuration: "500ms", transitionDelay: "380ms" }}
+            style={{ transitionDuration: "500ms", transitionDelay: "320ms" }}
           >
             <button
               type="submit"
@@ -150,29 +138,14 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  Signing in…
+                  Updating…
                 </>
               ) : (
-                "Sign in"
+                "Update password"
               )}
             </button>
           </div>
         </form>
-
-        <p
-          className={`mt-6 text-center text-xs text-muted-foreground transition-all
-            ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}
-          `}
-          style={{ transitionDuration: "500ms", transitionDelay: "460ms" }}
-        >
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/register"
-            className="text-foreground transition-colors hover:text-foreground/80"
-          >
-            Create an account
-          </Link>
-        </p>
       </div>
     </div>
   );
