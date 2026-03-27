@@ -21,7 +21,7 @@ export default async function OverviewPage({
           Welcome back, {firstName}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Here&apos;s what&apos;s happening with your pipeline.
+          Here&apos;s what&apos;s happening...
         </p>
       </div>
 
