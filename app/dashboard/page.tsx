@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { VerifiedToast, WelcomeToast } from "./verified-toast";
 
@@ -28,8 +30,8 @@ export default async function OverviewPage({
       {/* Stat cards placeholder */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Active leads", value: "—" },
-          { label: "Open conversations", value: "—" },
+          { label: "Leads This Month", value: "—" },
+          { label: "Active conversations", value: "—" },
           { label: "Avg. response time", value: "—" },
           { label: "Meetings booked", value: "—" },
         ].map((stat) => (
@@ -41,17 +43,58 @@ export default async function OverviewPage({
               {stat.label}
             </p>
             <p className="mt-2 text-2xl font-semibold">{stat.value}</p>
+            {stat.label === "Active conversations" && (
+              <span className="text-xs text-muted-foreground">0 awaiting human review</span>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Activity placeholder */}
-      <div className="mt-8 rounded-[var(--radius)] border border-border/60 bg-card/40 p-6">
-        <h2 className="text-lg font-semibold">Recent activity</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          No activity yet. Leads and conversations will appear here once your
-          workflows are running.
-        </p>
+      <div className="mt-8 grid gap-4 lg:grid-cols-3">
+        {/* Billing snapshot */}
+        <div className="rounded-[var(--radius)] border border-border/60 bg-card/40 p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Billing</h2>
+            <CreditCard size={16} className="text-muted-foreground" />
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Plan</span>
+              <span className="text-sm font-medium">Free</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Status</span>
+              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-500">
+                Active
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Next billing</span>
+              <span className="text-sm text-muted-foreground">—</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Monthly cost</span>
+              <span className="text-sm font-medium">$0.00</span>
+            </div>
+          </div>
+
+          <Link
+            href="/dashboard/billing"
+            className="mt-5 flex w-full items-center justify-center rounded-[var(--radius)] border border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+          >
+            Manage subscription
+          </Link>
+        </div>
+
+        {/* Recent activity */}
+        <div className="lg:col-span-2 rounded-[var(--radius)] border border-border/60 bg-card/40 p-6">
+          <h2 className="text-sm font-semibold">Recent activity</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            No activity yet. Leads and conversations will appear here once your
+            workflows are running.
+          </p>
+        </div>
       </div>
 
       {verified === "true" && <VerifiedToast />}
