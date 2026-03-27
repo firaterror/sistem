@@ -1,50 +1,58 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { LogOut } from "lucide-react";
 import { VerifiedToast, WelcomeToast } from "./verified-toast";
 
-export default async function DashboardPage({
+export default async function OverviewPage({
   searchParams,
 }: {
   searchParams: Promise<{ verified?: string; welcome?: string }>;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { verified, welcome } = await searchParams;
-  const firstName = user.user_metadata?.first_name || "there";
+  const firstName = user?.user_metadata?.first_name || "there";
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 h-14 border-b border-border/60 backdrop-blur bg-background/80">
-        <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4 sm:px-6">
-          <span className="text-lg font-semibold tracking-tight">KAGAN</span>
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="inline-flex h-9 items-center gap-2 rounded-[var(--radius)] border border-border/60 px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer"
-            >
-              <LogOut size={14} />
-              Sign out
-            </button>
-          </form>
-        </div>
-      </header>
+    <div className="p-6 lg:p-8">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Welcome back, {firstName}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Here&apos;s what&apos;s happening with your pipeline.
+        </p>
+      </div>
 
-      <main className="flex flex-1 items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Welcome, {firstName}
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Your dashboard is being built. Check back soon.
-          </p>
-        </div>
-      </main>
+      {/* Stat cards placeholder */}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Active leads", value: "—" },
+          { label: "Open conversations", value: "—" },
+          { label: "Avg. response time", value: "—" },
+          { label: "Meetings booked", value: "—" },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-[var(--radius)] border border-border/60 bg-card/40 p-5"
+          >
+            <p className="text-xs font-medium text-muted-foreground">
+              {stat.label}
+            </p>
+            <p className="mt-2 text-2xl font-semibold">{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Activity placeholder */}
+      <div className="mt-8 rounded-[var(--radius)] border border-border/60 bg-card/40 p-6">
+        <h2 className="text-lg font-semibold">Recent activity</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          No activity yet. Leads and conversations will appear here once your
+          workflows are running.
+        </p>
+      </div>
 
       {verified === "true" && <VerifiedToast />}
       {welcome === "true" && <WelcomeToast />}

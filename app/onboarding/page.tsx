@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { VerifiedToast } from "./verified-toast";
 import {
   ArrowRight,
   ArrowLeft,
@@ -133,6 +134,8 @@ export default function OnboardingPage() {
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [animating, setAnimating] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const verified = searchParams.get("verified") === "true";
 
   const [data, setData] = useState<OnboardingData>({
     company_name: "",
@@ -375,6 +378,8 @@ export default function OnboardingPage() {
           )}
         </div>
       </div>
+
+      {verified && <VerifiedToast />}
     </div>
   );
 }

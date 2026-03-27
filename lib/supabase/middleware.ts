@@ -51,18 +51,31 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Check onboarding status for authenticated users on dashboard
+  // Check onboarding status — use cookie cache to avoid DB query on every navigation
   if (user && pathname.startsWith("/dashboard")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_completed")
-      .eq("id", user.id)
-      .single();
+    const onboardingDone = request.cookies.get("onboarding_completed")?.value;
 
-    if (profile && !profile.onboarding_completed) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
+    if (onboardingDone !== "true") {
+      // Only query DB if cookie isn't set
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .single();
+
+      if (profile && !profile.onboarding_completed) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/onboarding";
+        return NextResponse.redirect(url);
+      }
+
+      // Cache the result so we don't query again
+      supabaseResponse.cookies.set("onboarding_completed", "true", {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
     }
   }
 
