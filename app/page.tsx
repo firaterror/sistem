@@ -170,10 +170,10 @@ function HeroSection() {
           `}
         >
           <a
-            href="#contact"
+            href="/register"
             className="inline-flex h-11 items-center gap-2 rounded-[var(--radius)] bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Book a conversation
+            Create an account
             <ArrowRight size={16} />
           </a>
           <a
@@ -318,10 +318,10 @@ function PricingSection() {
               ))}
             </ul>
             <a
-              href="#contact"
+              href="/register"
               className="mt-8 inline-flex h-11 items-center gap-2 rounded-[var(--radius)] bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Talk to sales
+              Get started
               <ArrowRight size={16} />
             </a>
             <p className="mt-4 text-xs text-muted-foreground">
@@ -448,7 +448,7 @@ function Footer() {
   return (
     <footer className="border-t border-border/60 bg-card/30">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid gap-8 sm:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-lg font-semibold tracking-tight">KAGAN</p>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -484,14 +484,43 @@ function Footer() {
             </p>
             <ul className="mt-3 space-y-2">
               <li>
-                <span className="text-sm text-muted-foreground/50 cursor-default">
+                <Link
+                  href="/privacy"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
                   Privacy
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="text-sm text-muted-foreground/50 cursor-default">
+                <Link
+                  href="/terms"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
                   Terms
-                </span>
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Contact Us
+            </p>
+            <ul className="mt-3 space-y-2">
+              <li>
+                <a
+                  href="mailto:hello@kagan.ai"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  hello@kagan.ai
+                </a>
+              </li>
+              <li>
+                <Link
+                  href="/contact"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Contact form
+                </Link>
               </li>
             </ul>
           </div>

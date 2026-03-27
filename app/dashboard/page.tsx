@@ -30,21 +30,25 @@ export default async function OverviewPage({
       {/* Stat cards placeholder */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Leads This Month", value: "—" },
-          { label: "Active conversations", value: "—" },
-          { label: "Avg. response time", value: "—" },
-          { label: "Meetings booked", value: "—" },
+          { label: "Leads This Month", value: "0" },
+          { label: "Active conversations", value: "0" },
+          { label: "Conversion Rate", value: "0%" },
+          { label: "Meetings booked", value: "0" },
         ].map((stat) => (
           <div
             key={stat.label}
             className="rounded-[var(--radius)] border border-border/60 bg-card/40 p-5"
           >
+
             <p className="text-xs font-medium text-muted-foreground">
               {stat.label}
             </p>
             <p className="mt-2 text-2xl font-semibold">{stat.value}</p>
             {stat.label === "Active conversations" && (
               <span className="text-xs text-muted-foreground">0 awaiting human review</span>
+            )}
+            {stat.label === "Conversion Rate" && (
+              <span className="text-xs text-muted-foreground">Pipeline +0% vs prior month</span>
             )}
           </div>
         ))}

@@ -7,24 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 const inputClass =
   "flex h-10 w-full rounded-[var(--radius)] border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors";
 
-const TIMEZONES = [
-  "UTC",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Anchorage",
-  "Pacific/Honolulu",
-  "Europe/London",
-  "Europe/Berlin",
-  "Europe/Paris",
-  "Europe/Istanbul",
-  "Asia/Dubai",
-  "Asia/Kolkata",
-  "Asia/Shanghai",
-  "Asia/Tokyo",
-  "Australia/Sydney",
-];
+const TIMEZONES = Intl.supportedValuesOf("timeZone");
 
 export default function SettingsPage() {
   const [orgName, setOrgName] = useState("");
