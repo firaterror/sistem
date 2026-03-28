@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { VerifiedToast } from "./verified-toast";
 import {
@@ -127,6 +127,14 @@ const selectClass =
 // ── Main Component ───────────────────────────────────────────────────
 
 export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingContent />
+    </Suspense>
+  );
+}
+
+function OnboardingContent() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);

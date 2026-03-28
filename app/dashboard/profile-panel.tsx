@@ -91,11 +91,12 @@ export function ProfilePanel({
       return;
     }
 
-    // Update email if changed
+    // Update email if changed — Supabase sends a verification link to the new address
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user && email.trim() !== user.email) {
+    const emailChanged = user && email.trim() !== user.email;
+    if (emailChanged) {
       const { error: emailError } = await supabase.auth.updateUser({
         email: email.trim(),
       });
@@ -158,10 +159,20 @@ export function ProfilePanel({
       })
       .eq("id", userId);
 
+    const pendingEmail = emailChanged ? email.trim() : null;
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    setMessage({ type: "success", text: "Profile updated successfully." });
+    if (emailChanged) {
+      // Revert to current verified email so the field doesn't mislead
+      setEmail(user?.email || "");
+    }
+    setMessage({
+      type: "success",
+      text: pendingEmail
+        ? `Profile updated. A verification link has been sent to ${pendingEmail} — your email will update once you confirm it.`
+        : "Profile updated successfully.",
+    });
     setLoading(false);
   }
 
