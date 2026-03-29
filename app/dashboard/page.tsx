@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { VerifiedToast, WelcomeToast } from "./verified-toast";
 
 export default async function OverviewPage({
@@ -35,7 +35,7 @@ export default async function OverviewPage({
 
   if (hasSubscription && profile?.stripe_subscription_id) {
     try {
-      const subscription = await stripe.subscriptions.retrieve(
+      const subscription = await getStripe().subscriptions.retrieve(
         profile.stripe_subscription_id
       );
       isCanceling =

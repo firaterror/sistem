@@ -1,4 +1,4 @@
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -29,7 +29,7 @@ export async function GET() {
 
   // Fetch live subscription data from Stripe
   try {
-    const subscription = await stripe.subscriptions.retrieve(
+    const subscription = await getStripe().subscriptions.retrieve(
       profile.stripe_subscription_id
     );
 
