@@ -34,7 +34,9 @@ export async function updateSession(request: NextRequest) {
   // Redirect unauthenticated users away from protected routes
   if (
     !user &&
-    (pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding"))
+    (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/onboarding") ||
+      pathname.startsWith("/admin"))
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -49,6 +51,32 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // Block non-admin users from /admin routes (cached in cookie)
+  if (user && pathname.startsWith("/admin")) {
+    const adminCached = request.cookies.get("is_admin")?.value;
+
+    if (adminCached !== "true") {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.is_admin) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
+
+      supabaseResponse.cookies.set("is_admin", "true", {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+    }
   }
 
   // Check onboarding status — use cookie cache to avoid DB query on every navigation

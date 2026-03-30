@@ -8,6 +8,7 @@ export async function POST() {
 
   const cookieStore = await cookies();
   cookieStore.delete("onboarding_completed");
+  cookieStore.delete("is_admin");
 
   redirect("/");
 }
