@@ -15,7 +15,7 @@ export async function POST() {
   // Check if user already has a Stripe customer ID
   const { data: profile } = await supabase
     .from("profiles")
-    .select("stripe_customer_id")
+    .select("stripe_customer_id, stripe_subscription_id")
     .eq("id", user.id)
     .single();
 
@@ -35,6 +35,9 @@ export async function POST() {
       .eq("id", user.id);
   }
 
+  // Only offer trial to first-time subscribers
+  const isNewSubscriber = !profile?.stripe_subscription_id;
+
   // Create Checkout session
   const session = await getStripe().checkout.sessions.create({
     customer: customerId,
@@ -45,6 +48,11 @@ export async function POST() {
         quantity: 1,
       },
     ],
+    ...(isNewSubscriber && {
+      subscription_data: {
+        trial_period_days: 7,
+      },
+    }),
     success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001"}/dashboard/billing?success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001"}/dashboard/billing`,
   });

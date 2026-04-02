@@ -71,6 +71,7 @@ export default function BillingPage() {
   const isActive = sub?.status === "active" || sub?.status === "trialing";
   const isCanceling = isActive && (sub?.cancelAtPeriodEnd || !!sub?.cancelAt);
   const remaining = sub?.cancelAt ? daysLeft(sub.cancelAt) : null;
+  const hadSubscriptionBefore = sub?.hasSubscription || !!sub?.status;
 
   if (loading) {
     return (
@@ -239,10 +240,17 @@ export default function BillingPage() {
                     <Loader2 size={14} className="animate-spin" />
                     Redirecting…
                   </>
+                ) : hadSubscriptionBefore ? (
+                  "Resubscribe"
                 ) : (
-                  "Subscribe"
+                  "Start 7-day free trial"
                 )}
               </button>
+              {!hadSubscriptionBefore && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  No charge for 7 days. Cancel anytime.
+                </p>
+              )}
             </div>
           )}
         </div>

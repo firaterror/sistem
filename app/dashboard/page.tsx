@@ -27,6 +27,7 @@ export default async function OverviewPage({
   const hasSubscription =
     !!profile?.stripe_subscription_id &&
     (subStatus === "active" || subStatus === "trialing");
+  const hadSubscriptionBefore = !!profile?.stripe_subscription_id;
 
   // Fetch live cancellation state from Stripe
   let isCanceling = false;
@@ -169,7 +170,7 @@ export default async function OverviewPage({
                 href="/dashboard/billing"
                 className="mt-5 flex w-full items-center justify-center rounded-[var(--radius)] bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                Subscribe
+                {hadSubscriptionBefore ? "Resubscribe" : "Start a free trial"}
               </Link>
             </>
           )}
