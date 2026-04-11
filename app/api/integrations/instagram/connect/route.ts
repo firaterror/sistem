@@ -21,13 +21,11 @@ export async function GET() {
   const state = randomBytes(16).toString("hex");
   const url = buildInstagramOAuthUrl(state);
 
-  const res = NextResponse.redirect(url);
-  res.cookies.set("ig_oauth_state", state, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: true,
-    maxAge: 600,
-    path: "/",
+  return new NextResponse(null, {
+    status: 307,
+    headers: {
+      Location: url,
+      "Set-Cookie": `ig_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=600`,
+    },
   });
-  return res;
 }

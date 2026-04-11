@@ -35,6 +35,14 @@ export async function GET(request: NextRequest) {
   if (!code) return redirectWithError("missing_code");
 
   const storedState = request.cookies.get("ig_oauth_state")?.value;
+  const allCookieNames = request.cookies.getAll().map((c) => c.name);
+  console.log("[ig callback] debug", {
+    returnedState,
+    storedState,
+    allCookieNames,
+    cookieHeader: request.headers.get("cookie"),
+  });
+
   if (!storedState || storedState !== returnedState) {
     return redirectWithError("invalid_state");
   }
