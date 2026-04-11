@@ -14,7 +14,24 @@ import {
   Globe,
   CreditCard,
   Loader2,
+  Plug,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
 } from "lucide-react";
+
+type Integration = {
+  provider: string;
+  status: string;
+  provider_account_id: string | null;
+  provider_metadata: Record<string, unknown> | null;
+  access_token: string | null;
+  token_expiry: string | null;
+  connected_at: string | null;
+  last_activity_at: string | null;
+  error_message: string | null;
+};
 
 type Customer = {
   id: string;
@@ -34,7 +51,18 @@ type Customer = {
   stripe_subscription_status: string | null;
   onboarding_completed: boolean | null;
   created_at: string | null;
+  integrations: Integration[] | null;
 };
+
+const DAY_ORDER = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -42,6 +70,23 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "subscribed" | "free">("all");
+  const [revealedTokens, setRevealedTokens] = useState<Set<string>>(new Set());
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  function toggleToken(key: string) {
+    setRevealedTokens((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  async function copyToken(key: string, token: string) {
+    await navigator.clipboard.writeText(token);
+    setCopiedToken(key);
+    setTimeout(() => setCopiedToken(null), 1500);
+  }
 
   useEffect(() => {
     fetch("/api/admin/customers")
@@ -282,7 +327,13 @@ export default function CustomersPage() {
                                 Business Hours
                               </p>
                               <div className="mt-2 space-y-1">
-                                {Object.entries(customer.business_hours).map(
+                                {Object.entries(customer.business_hours)
+                                  .sort(
+                                    ([a], [b]) =>
+                                      DAY_ORDER.indexOf(a.toLowerCase()) -
+                                      DAY_ORDER.indexOf(b.toLowerCase())
+                                  )
+                                  .map(
                                   ([day, hours]) => (
                                     <div
                                       key={day}
@@ -354,6 +405,124 @@ export default function CustomersPage() {
                             </div>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Integrations */}
+                      <div className="mt-6 border-t border-border/40 pt-5">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          <Plug size={12} />
+                          Integrations
+                        </p>
+                        {customer.integrations &&
+                        customer.integrations.length > 0 ? (
+                          <div className="mt-3 space-y-3">
+                            {customer.integrations.map((intg) => {
+                              const key = `${customer.id}:${intg.provider}`;
+                              const revealed = revealedTokens.has(key);
+                              const meta = intg.provider_metadata as
+                                | { instagram_username?: string; page_name?: string }
+                                | null;
+                              const accountLabel =
+                                meta?.instagram_username
+                                  ? `@${meta.instagram_username}`
+                                  : meta?.page_name ||
+                                    intg.provider_account_id ||
+                                    "—";
+                              return (
+                                <div
+                                  key={intg.provider}
+                                  className="rounded-[var(--radius)] border border-border/60 bg-card/40 p-3"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-xs font-medium capitalize">
+                                        {intg.provider}
+                                      </p>
+                                      <p className="text-[11px] text-muted-foreground">
+                                        {accountLabel}
+                                      </p>
+                                    </div>
+                                    <span
+                                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                        intg.status === "connected"
+                                          ? "bg-emerald-500/10 text-emerald-500"
+                                          : intg.status === "error"
+                                          ? "bg-red-500/10 text-red-400"
+                                          : "bg-muted/50 text-muted-foreground"
+                                      }`}
+                                    >
+                                      {intg.status}
+                                    </span>
+                                  </div>
+                                  {intg.access_token && (
+                                    <div className="mt-2">
+                                      <div className="flex items-center gap-2">
+                                        <code className="flex-1 truncate rounded bg-muted/30 px-2 py-1 font-mono text-[10px]">
+                                          {revealed
+                                            ? intg.access_token
+                                            : "•".repeat(40)}
+                                        </code>
+                                        <button
+                                          onClick={() => toggleToken(key)}
+                                          className="rounded border border-border/60 p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                                          title={revealed ? "Hide" : "Show"}
+                                        >
+                                          {revealed ? (
+                                            <EyeOff size={10} />
+                                          ) : (
+                                            <Eye size={10} />
+                                          )}
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            copyToken(key, intg.access_token!)
+                                          }
+                                          className="rounded border border-border/60 p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                                          title="Copy"
+                                        >
+                                          {copiedToken === key ? (
+                                            <Check
+                                              size={10}
+                                              className="text-emerald-500"
+                                            />
+                                          ) : (
+                                            <Copy size={10} />
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                                    <div>
+                                      <span className="block">Connected</span>
+                                      <span className="font-medium text-foreground">
+                                        {intg.connected_at
+                                          ? new Date(
+                                              intg.connected_at
+                                            ).toLocaleDateString()
+                                          : "—"}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="block">Expires</span>
+                                      <span className="font-medium text-foreground">
+                                        {intg.token_expiry
+                                          ? new Date(
+                                              intg.token_expiry
+                                            ).toLocaleDateString()
+                                          : "—"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            No integrations connected.
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
