@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import {
+  loadFacebookSDK,
+  launchWhatsAppSignup,
+} from "@/lib/integrations/facebook-sdk";
 import {
   MessageCircle,
   Camera,
@@ -34,6 +38,7 @@ type ProviderMeta = {
   name: string;
   description: string;
   icon: React.ReactNode;
+  connectType: "redirect" | "fb-popup" | null;
   connectPath: string | null;
 };
 
@@ -43,6 +48,7 @@ const PROVIDERS: ProviderMeta[] = [
     name: "WhatsApp Business API",
     description: "Send and receive messages through WhatsApp",
     icon: <MessageCircle size={18} />,
+    connectType: "fb-popup",
     connectPath: null,
   },
   {
@@ -50,6 +56,7 @@ const PROVIDERS: ProviderMeta[] = [
     name: "Instagram Messaging",
     description: "Handle DMs and story replies from Instagram",
     icon: <Camera size={18} />,
+    connectType: "redirect",
     connectPath: "/api/integrations/instagram/connect",
   },
   {
@@ -57,6 +64,7 @@ const PROVIDERS: ProviderMeta[] = [
     name: "Calendar",
     description: "Google Calendar or Outlook sync for meeting bookings",
     icon: <Calendar size={18} />,
+    connectType: null,
     connectPath: null,
   },
   {
@@ -64,6 +72,7 @@ const PROVIDERS: ProviderMeta[] = [
     name: "CRM",
     description: "Sync leads and deal stages with your CRM",
     icon: <Database size={18} />,
+    connectType: null,
     connectPath: null,
   },
 ];
@@ -124,6 +133,8 @@ export default function IntegrationsPage() {
     }
   }, [searchParams, router]);
 
+  const [fbReady, setFbReady] = useState(false);
+
   useEffect(() => {
     async function load() {
       try {
@@ -137,11 +148,59 @@ export default function IntegrationsPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    const appId = process.env.NEXT_PUBLIC_META_APP_ID;
+    if (appId) {
+      loadFacebookSDK(appId).then(() => setFbReady(true));
+    }
+  }, []);
+
   const rowsByProvider = new Map(rows.map((r) => [r.provider, r]));
 
   const connectedCount = rows.filter((r) => r.status === "connected").length;
 
+  const handleWhatsAppConnect = useCallback(async () => {
+    setBusyKey("whatsapp");
+    try {
+      const code = await launchWhatsAppSignup();
+      const res = await fetch("/api/integrations/whatsapp/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setRows((prev) => [
+          ...prev.filter((r) => r.provider !== "whatsapp"),
+          {
+            provider: "whatsapp",
+            status: "connected" as Status,
+            provider_account_id: data.phone_number || data.waba_id,
+            provider_metadata: { phone_number: data.phone_number },
+            error_message: null,
+            connected_at: new Date().toISOString(),
+            last_activity_at: new Date().toISOString(),
+          },
+        ]);
+        setNotice({ kind: "success", text: "WhatsApp connected" });
+      } else {
+        setNotice({
+          kind: "error",
+          text: data.error || "WhatsApp connection failed",
+        });
+      }
+    } catch {
+      setNotice({ kind: "error", text: "WhatsApp signup cancelled" });
+    } finally {
+      setBusyKey(null);
+    }
+  }, []);
+
   async function handleConnect(p: ProviderMeta) {
+    if (p.connectType === "fb-popup") {
+      handleWhatsAppConnect();
+      return;
+    }
     if (!p.connectPath) return;
     setBusyKey(p.key);
     window.location.href = p.connectPath;
@@ -202,21 +261,28 @@ export default function IntegrationsPage() {
           const status: Status = row?.status || "disconnected";
           const cfg = statusConfig[status];
           const isBusy = busyKey === p.key;
-          const canConnect = !!p.connectPath;
+          const canConnect =
+            !!p.connectPath || (p.connectType === "fb-popup" && fbReady);
           const metadata = row?.provider_metadata as
-            | { instagram_username?: string; page_name?: string }
+            | {
+                instagram_username?: string;
+                page_name?: string;
+                phone_number?: string;
+              }
             | null;
 
           let detail = "Not configured";
           if (status === "connected") {
             if (p.key === "instagram" && metadata?.instagram_username) {
               detail = `@${metadata.instagram_username}`;
+            } else if (p.key === "whatsapp" && metadata?.phone_number) {
+              detail = metadata.phone_number;
             } else {
               detail = "Connected";
             }
           } else if (status === "error") {
             detail = row?.error_message || "Error";
-          } else if (!canConnect) {
+          } else if (!canConnect && !p.connectType) {
             detail = "Coming soon";
           }
 
@@ -286,7 +352,11 @@ export default function IntegrationsPage() {
                 ) : (
                   <>
                     <Plug size={12} />
-                    {canConnect ? "Connect" : "Coming soon"}
+                    {canConnect
+                      ? "Connect"
+                      : p.connectType
+                      ? "Loading..."
+                      : "Coming soon"}
                   </>
                 )}
               </button>
