@@ -420,12 +420,19 @@ export default function CustomersPage() {
                               const key = `${customer.id}:${intg.provider}`;
                               const revealed = revealedTokens.has(key);
                               const meta = intg.provider_metadata as
-                                | { instagram_username?: string; page_name?: string }
+                                | {
+                                    instagram_username?: string;
+                                    page_name?: string;
+                                    waba_id?: string;
+                                    phone_number_id?: string;
+                                    phone_number?: string;
+                                  }
                                 | null;
                               const accountLabel =
                                 meta?.instagram_username
                                   ? `@${meta.instagram_username}`
-                                  : meta?.page_name ||
+                                  : meta?.phone_number ||
+                                    meta?.page_name ||
                                     intg.provider_account_id ||
                                     "—";
                               return (
@@ -489,6 +496,52 @@ export default function CustomersPage() {
                                             <Copy size={10} />
                                           )}
                                         </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {intg.provider === "whatsapp" && meta && (
+                                    <div className="mt-2 space-y-1">
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className="text-muted-foreground">
+                                          WABA ID
+                                        </span>
+                                        <span className="font-mono font-medium">
+                                          {meta.waba_id || "—"}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className="text-muted-foreground">
+                                          Phone Number ID
+                                        </span>
+                                        <span className="font-mono font-medium">
+                                          {meta.phone_number_id || "—"}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className="text-muted-foreground">
+                                          Phone Number
+                                        </span>
+                                        <span className="font-medium">
+                                          {meta.phone_number || "—"}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className="text-muted-foreground">
+                                          API Version
+                                        </span>
+                                        <span className="font-mono font-medium">
+                                          v22.0
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className="text-muted-foreground">
+                                          Webhook Verify Token
+                                        </span>
+                                        <span className="font-mono font-medium truncate max-w-[180px]">
+                                          {process.env
+                                            .NEXT_PUBLIC_META_WEBHOOK_VERIFY_TOKEN ||
+                                            "Set in env"}
+                                        </span>
                                       </div>
                                     </div>
                                   )}

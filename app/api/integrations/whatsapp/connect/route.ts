@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       `${GRAPH_URL}/debug_token?input_token=${accessToken}&access_token=${process.env.META_APP_ID!}|${process.env.META_APP_SECRET!}`
     );
     const debugData = await debugRes.json();
-    console.log("[whatsapp connect] debug_token:", JSON.stringify(debugData));
 
     const granularScopes = debugData?.data?.granular_scopes || [];
     const wabaScope = granularScopes.find(
