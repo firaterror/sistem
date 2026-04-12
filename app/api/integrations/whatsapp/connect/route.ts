@@ -21,22 +21,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
     const tokenUrl = new URL(`${GRAPH_URL}/oauth/access_token`);
     tokenUrl.searchParams.set("client_id", process.env.META_APP_ID!);
     tokenUrl.searchParams.set("client_secret", process.env.META_APP_SECRET!);
+    tokenUrl.searchParams.set("redirect_uri", `${siteUrl}/dashboard/integrations`);
     tokenUrl.searchParams.set("code", code);
 
+    console.log("[whatsapp connect] exchanging code, redirect_uri:", `${siteUrl}/dashboard/integrations`);
     const tokenRes = await fetch(tokenUrl.toString());
+    const tokenText = await tokenRes.text();
+    console.log("[whatsapp connect] token response:", tokenRes.status, tokenText);
+
     if (!tokenRes.ok) {
-      const err = await tokenRes.text();
-      console.error("[whatsapp connect] token exchange failed:", err);
       return NextResponse.json(
-        { error: "Token exchange failed" },
+        { error: "Token exchange failed", detail: tokenText },
         { status: 400 }
       );
     }
 
-    const tokenData = await tokenRes.json();
+    const tokenData = JSON.parse(tokenText);
     const accessToken: string = tokenData.access_token;
 
     const debugRes = await fetch(
