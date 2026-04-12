@@ -162,11 +162,11 @@ export default function IntegrationsPage() {
   const handleWhatsAppConnect = useCallback(async () => {
     setBusyKey("whatsapp");
     try {
-      const code = await launchWhatsAppSignup();
+      const accessToken = await launchWhatsAppSignup();
       const res = await fetch("/api/integrations/whatsapp/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ access_token: accessToken }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

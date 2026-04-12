@@ -15,36 +15,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { code } = await request.json();
-  if (!code) {
-    return NextResponse.json({ error: "Missing code" }, { status: 400 });
+  const { access_token: accessToken } = await request.json();
+  if (!accessToken) {
+    return NextResponse.json({ error: "Missing access_token" }, { status: 400 });
   }
 
   try {
-    const tokenUrl = new URL(`${GRAPH_URL}/oauth/access_token`);
-    tokenUrl.searchParams.set("client_id", process.env.META_APP_ID!);
-    tokenUrl.searchParams.set("client_secret", process.env.META_APP_SECRET!);
-    tokenUrl.searchParams.set("code", code);
-    const tokenRes = await fetch(tokenUrl.toString());
-    const tokenText = await tokenRes.text();
-    console.log("[whatsapp connect] token response:", tokenRes.status, tokenText);
-
-    if (!tokenRes.ok) {
-      return NextResponse.json(
-        { error: "Token exchange failed", detail: tokenText },
-        { status: 400 }
-      );
-    }
-
-    const tokenData = JSON.parse(tokenText);
-    const accessToken: string = tokenData.access_token;
-
     const debugRes = await fetch(
       `${GRAPH_URL}/debug_token?input_token=${accessToken}&access_token=${process.env.META_APP_ID!}|${process.env.META_APP_SECRET!}`
     );
     const debugData = await debugRes.json();
-    const granularScopes = debugData?.data?.granular_scopes || [];
+    console.log("[whatsapp connect] debug_token:", JSON.stringify(debugData));
 
+    const granularScopes = debugData?.data?.granular_scopes || [];
     const wabaScope = granularScopes.find(
       (s: { scope: string; target_ids?: string[] }) =>
         s.scope === "whatsapp_business_management"

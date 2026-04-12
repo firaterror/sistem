@@ -80,29 +80,28 @@ export function checkLoginStatus(): Promise<FBLoginResponse> {
 }
 
 export async function launchWhatsAppSignup(): Promise<string> {
+  // Returns an access token directly (not a code)
   if (!window.FB) {
     throw new Error("Facebook SDK not loaded");
   }
 
   const status = await checkLoginStatus();
 
-  if (status.status === "connected" && status.authResponse?.code) {
-    return status.authResponse.code;
+  if (status.status === "connected" && status.authResponse?.accessToken) {
+    return status.authResponse.accessToken;
   }
 
   return new Promise((resolve, reject) => {
     window.FB.login(
       (response) => {
-        if (response.authResponse?.code) {
-          resolve(response.authResponse.code);
+        if (response.authResponse?.accessToken) {
+          resolve(response.authResponse.accessToken);
         } else {
           reject(new Error("Login cancelled or failed"));
         }
       },
       {
         config_id: "1864086677629331",
-        response_type: "code",
-        override_default_response_type: true,
         extras: {
           setup: {},
           featureType: "",
