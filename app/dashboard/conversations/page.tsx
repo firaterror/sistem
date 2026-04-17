@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   MessageSquare,
   Bot,
@@ -11,50 +11,26 @@ import {
   CircleDot,
   CheckCircle2,
   PauseCircle,
-  CalendarCheck,
-  AlertTriangle,
   Send,
   Mail,
   Phone,
   Camera,
   Globe,
+  Loader2,
+  XCircle,
+  HandMetal,
+  RotateCcw,
 } from "lucide-react";
-
-// ── Types ────────────────────────────────────────────────────────────
-
-type Channel = "whatsapp" | "instagram" | "email" | "phone" | "web";
-type ConversationStatus = "active" | "waiting" | "handed_off" | "closed";
-
-type Message = {
-  id: string;
-  sender: "ai" | "human" | "lead";
-  text: string;
-  timestamp: string;
-};
-
-type TimelineEvent = {
-  id: string;
-  type: "message_received" | "ai_replied" | "handoff" | "appointment" | "closed" | "reopened";
-  label: string;
-  timestamp: string;
-};
-
-type Conversation = {
-  id: string;
-  leadName: string;
-  channel: Channel;
-  status: ConversationStatus;
-  lastMessage: string;
-  lastMessageAt: string;
-  messageCount: number;
-  unread: boolean;
-  messages: Message[];
-  timeline: TimelineEvent[];
-};
+import type {
+  Conversation,
+  Message,
+  Channel,
+  ConversationStatus,
+} from "@/lib/types/conversation";
 
 // ── Config ───────────────────────────────────────────────────────────
 
-const channels: { key: Channel; label: string; icon: React.ReactNode }[] = [
+const channelsMeta: { key: Channel; label: string; icon: React.ReactNode }[] = [
   { key: "whatsapp", label: "WhatsApp", icon: <MessageSquare size={16} /> },
   { key: "instagram", label: "Instagram", icon: <Camera size={16} /> },
   { key: "email", label: "Email", icon: <Mail size={16} /> },
@@ -88,33 +64,166 @@ const statusConfig: Record<
   },
 };
 
-const timelineIcons: Record<string, React.ReactNode> = {
-  message_received: <MessageSquare size={12} />,
-  ai_replied: <Bot size={12} />,
-  handoff: <ArrowRightLeft size={12} />,
-  appointment: <CalendarCheck size={12} />,
-  closed: <CheckCircle2 size={12} />,
-  reopened: <AlertTriangle size={12} />,
-};
-
-// ── Mock data ────────────────────────────────────────────────────────
-
-const conversations: Conversation[] = [];
+function formatRelative(iso: string | null): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
+}
 
 // ── Component ────────────────────────────────────────────────────────
 
 export default function ConversationsPage() {
   const [activeChannel, setActiveChannel] = useState<Channel>("whatsapp");
-  const [selected, setSelected] = useState<Conversation | null>(null);
-  const [tab, setTab] = useState<"messages" | "timeline">("messages");
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [search, setSearch] = useState("");
+  const [compose, setCompose] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const filtered = conversations.filter((c) => c.channel === activeChannel);
+  // ── Fetch conversations ──────────────────────────────────────────
+  const fetchConversations = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({ channel: activeChannel });
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/conversations?${params}`);
+      const data = await res.json();
+      setConversations(data.conversations || []);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeChannel, search]);
 
-  const channelCounts = channels.map((ch) => ({
+  useEffect(() => {
+    setLoading(true);
+    setSelectedId(null);
+    setMessages([]);
+    fetchConversations();
+  }, [fetchConversations]);
+
+  // Poll for new conversations every 10s
+  useEffect(() => {
+    const interval = setInterval(fetchConversations, 10000);
+    return () => clearInterval(interval);
+  }, [fetchConversations]);
+
+  // ── Fetch messages when selecting a conversation ─────────────────
+  const fetchMessages = useCallback(async (convId: string) => {
+    setLoadingMessages(true);
+    try {
+      const res = await fetch(`/api/conversations/${convId}`);
+      const data = await res.json();
+      setMessages(data.messages || []);
+    } finally {
+      setLoadingMessages(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    fetchMessages(selectedId);
+    const interval = setInterval(() => fetchMessages(selectedId), 5000);
+    return () => clearInterval(interval);
+  }, [selectedId, fetchMessages]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ── Mark as read when selecting ──────────────────────────────────
+  useEffect(() => {
+    if (!selectedId) return;
+    const conv = conversations.find((c) => c.id === selectedId);
+    if (conv && conv.unread_count > 0) {
+      fetch(`/api/conversations/${selectedId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unread_count: 0 }),
+      }).then(() => {
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === selectedId ? { ...c, unread_count: 0 } : c
+          )
+        );
+      });
+    }
+  }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Send message ─────────────────────────────────────────────────
+  async function handleSend() {
+    if (!compose.trim() || !selectedId || sending) return;
+    setSending(true);
+    try {
+      const res = await fetch(`/api/conversations/${selectedId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: compose.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages((prev) => [...prev, data.message]);
+        setCompose("");
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === selectedId
+              ? {
+                  ...c,
+                  last_message_text: data.message.content,
+                  last_message_at: data.message.created_at,
+                }
+              : c
+          )
+        );
+      }
+    } finally {
+      setSending(false);
+    }
+  }
+
+  // ── Update conversation status ───────────────────────────────────
+  async function handleStatusChange(newStatus: ConversationStatus) {
+    if (!selectedId) return;
+    const res = await fetch(`/api/conversations/${selectedId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (res.ok) {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === selectedId ? { ...c, status: newStatus } : c
+        )
+      );
+    }
+  }
+
+  // ── Derived state ────────────────────────────────────────────────
+  const selected = conversations.find((c) => c.id === selectedId) || null;
+
+  const channelCounts = channelsMeta.map((ch) => ({
     ...ch,
-    count: conversations.filter((c) => c.channel === ch.key).length,
-    unread: conversations.filter((c) => c.channel === ch.key && c.unread).length,
+    count: 0,
+    unread: 0,
   }));
+
+  // We only have counts for the active channel from the fetched data
+  const activeChIdx = channelCounts.findIndex((c) => c.key === activeChannel);
+  if (activeChIdx !== -1) {
+    channelCounts[activeChIdx].count = conversations.length;
+    channelCounts[activeChIdx].unread = conversations.filter(
+      (c) => c.unread_count > 0
+    ).length;
+  }
 
   return (
     <div className="flex h-full">
@@ -125,7 +234,7 @@ export default function ConversationsPage() {
             key={ch.key}
             onClick={() => {
               setActiveChannel(ch.key);
-              setSelected(null);
+              setSearch("");
             }}
             className={`relative flex h-11 w-11 items-center justify-center rounded-[var(--radius)] transition-colors cursor-pointer ${
               activeChannel === ch.key
@@ -149,57 +258,77 @@ export default function ConversationsPage() {
         {/* Header */}
         <div className="border-b border-border/60 px-4 py-4">
           <h2 className="text-sm font-semibold">
-            {channels.find((c) => c.key === activeChannel)?.label}
+            {channelsMeta.find((c) => c.key === activeChannel)?.label}
           </h2>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {filtered.length} conversation{filtered.length !== 1 && "s"}
+            {conversations.length} conversation
+            {conversations.length !== 1 && "s"}
           </p>
           {/* Search */}
           <div className="mt-3 flex items-center gap-2 rounded-[var(--radius)] border border-border/60 bg-muted/20 px-3 py-1.5">
             <Search size={12} className="text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Search...</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <XCircle size={12} />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Thread list */}
         <div className="flex-1 overflow-y-auto">
-          {filtered.length > 0 ? (
-            filtered.map((conv) => {
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={16} className="animate-spin text-muted-foreground" />
+            </div>
+          ) : conversations.length > 0 ? (
+            conversations.map((conv) => {
               const st = statusConfig[conv.status];
-              const isSelected = selected?.id === conv.id;
+              const isSelected = selectedId === conv.id;
+              const name = conv.contact_name || conv.contact_identifier;
               return (
                 <button
                   key={conv.id}
-                  onClick={() => {
-                    setSelected(conv);
-                    setTab("messages");
-                  }}
+                  onClick={() => setSelectedId(conv.id)}
                   className={`flex w-full items-start gap-3 border-b border-border/40 px-4 py-3 text-left transition-colors cursor-pointer ${
-                    isSelected
-                      ? "bg-accent/60"
-                      : "hover:bg-accent/30"
+                    isSelected ? "bg-accent/60" : "hover:bg-accent/30"
                   }`}
                 >
                   {/* Avatar */}
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/30 text-xs font-medium text-muted-foreground">
-                    {conv.leadName
+                    {name
                       .split(" ")
                       .map((n) => n[0])
                       .join("")
-                      .slice(0, 2)}
+                      .slice(0, 2)
+                      .toUpperCase()}
                   </div>
                   {/* Info */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <p className={`text-sm font-medium truncate ${conv.unread ? "text-foreground" : ""}`}>
-                        {conv.leadName}
+                      <p
+                        className={`text-sm font-medium truncate ${
+                          conv.unread_count > 0 ? "text-foreground" : ""
+                        }`}
+                      >
+                        {name}
                       </p>
                       <span className="shrink-0 text-[10px] text-muted-foreground">
-                        {conv.lastMessageAt}
+                        {formatRelative(conv.last_message_at)}
                       </span>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {conv.lastMessage}
+                      {conv.last_message_text || "No messages yet"}
                     </p>
                     <div className="mt-1.5 flex items-center gap-2">
                       <span
@@ -208,8 +337,10 @@ export default function ConversationsPage() {
                         {st.icon}
                         {st.label}
                       </span>
-                      {conv.unread && (
-                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      {conv.unread_count > 0 && (
+                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+                          {conv.unread_count}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -234,7 +365,9 @@ export default function ConversationsPage() {
             <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold">{selected.leadName}</h2>
+                  <h2 className="text-sm font-semibold">
+                    {selected.contact_name || selected.contact_identifier}
+                  </h2>
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusConfig[selected.status].color}`}
                   >
@@ -243,137 +376,158 @@ export default function ConversationsPage() {
                   </span>
                 </div>
                 <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  {selected.messageCount} messages · {selected.id}
+                  {messages.length} messages · {selected.contact_identifier}
                 </p>
               </div>
-              {/* Tabs */}
-              <div className="flex gap-1 rounded-[var(--radius)] border border-border/60 bg-muted/20 p-1">
-                <button
-                  onClick={() => setTab("messages")}
-                  className={`rounded-[calc(var(--radius)-2px)] px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                    tab === "messages"
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Messages
-                </button>
-                <button
-                  onClick={() => setTab("timeline")}
-                  className={`rounded-[calc(var(--radius)-2px)] px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                    tab === "timeline"
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Timeline
-                </button>
+              {/* Status actions */}
+              <div className="flex items-center gap-1">
+                {selected.status !== "handed_off" && (
+                  <button
+                    onClick={() => handleStatusChange("handed_off")}
+                    className="flex items-center gap-1.5 rounded-[var(--radius)] border border-border/60 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground cursor-pointer"
+                    title="Hand off"
+                  >
+                    <HandMetal size={12} />
+                    Handoff
+                  </button>
+                )}
+                {selected.status !== "closed" ? (
+                  <button
+                    onClick={() => handleStatusChange("closed")}
+                    className="flex items-center gap-1.5 rounded-[var(--radius)] border border-border/60 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground cursor-pointer"
+                    title="Close"
+                  >
+                    <CheckCircle2 size={12} />
+                    Close
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleStatusChange("active")}
+                    className="flex items-center gap-1.5 rounded-[var(--radius)] border border-border/60 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground cursor-pointer"
+                    title="Reopen"
+                  >
+                    <RotateCcw size={12} />
+                    Reopen
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Content */}
+            {/* Messages */}
             <div className="flex-1 overflow-y-auto">
-              {tab === "messages" ? (
+              {loadingMessages ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2
+                    size={16}
+                    className="animate-spin text-muted-foreground"
+                  />
+                </div>
+              ) : messages.length > 0 ? (
                 <div className="space-y-0">
-                  {selected.messages.length > 0 ? (
-                    selected.messages.map((msg) => (
+                  {messages.map((msg) => {
+                    const senderType = msg.sender_type;
+                    return (
                       <div
                         key={msg.id}
                         className={`px-6 py-4 ${
-                          msg.sender === "lead" ? "bg-transparent" : "bg-muted/10"
+                          senderType === "lead" ? "bg-transparent" : "bg-muted/10"
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <div
                             className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                              msg.sender === "ai"
+                              senderType === "ai"
                                 ? "bg-violet-500/10 text-violet-400"
-                                : msg.sender === "human"
+                                : senderType === "human"
                                   ? "bg-blue-500/10 text-blue-400"
                                   : "bg-muted/50 text-muted-foreground"
                             }`}
                           >
-                            {msg.sender === "ai" ? (
+                            {senderType === "ai" ? (
                               <Bot size={12} />
-                            ) : msg.sender === "human" ? (
+                            ) : senderType === "human" ? (
                               <User size={12} />
                             ) : (
                               <Send size={12} />
                             )}
                           </div>
                           <span className="text-xs font-medium">
-                            {msg.sender === "ai"
+                            {senderType === "ai"
                               ? "KAGAN AI"
-                              : msg.sender === "human"
+                              : senderType === "human"
                                 ? "Agent"
-                                : selected.leadName}
+                                : selected.contact_name ||
+                                  selected.contact_identifier}
                           </span>
                           <span
                             className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                              msg.sender === "ai"
+                              senderType === "ai"
                                 ? "bg-violet-500/10 text-violet-400"
-                                : msg.sender === "human"
+                                : senderType === "human"
                                   ? "bg-blue-500/10 text-blue-400"
                                   : "bg-muted/40 text-muted-foreground"
                             }`}
                           >
-                            {msg.sender === "ai"
+                            {senderType === "ai"
                               ? "AI"
-                              : msg.sender === "human"
+                              : senderType === "human"
                                 ? "Human"
                                 : "Lead"}
                           </span>
                           <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <Clock size={9} />
-                            {msg.timestamp}
+                            {formatRelative(msg.created_at)}
                           </span>
                         </div>
                         <p className="mt-2 pl-8 text-sm text-foreground/90">
-                          {msg.text}
+                          {msg.content}
                         </p>
                       </div>
-                    ))
-                  ) : (
-                    <div className="px-6 py-10 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        No messages yet.
-                      </p>
-                    </div>
-                  )}
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
                 </div>
               ) : (
-                /* Timeline */
-                <div className="px-6 py-6">
-                  {selected.timeline.length > 0 ? (
-                    <div className="relative ml-3 border-l border-border/60 pl-6">
-                      {selected.timeline.map((event) => (
-                        <div key={event.id} className="relative pb-6 last:pb-0">
-                          <div className="absolute -left-[calc(1.5rem+5px)] flex h-[10px] w-[10px] items-center justify-center rounded-full border-2 border-border bg-card" />
-                          <div className="flex items-start gap-2">
-                            <span className="mt-px text-muted-foreground">
-                              {timelineIcons[event.type] || <CircleDot size={12} />}
-                            </span>
-                            <div>
-                              <p className="text-sm font-medium">{event.label}</p>
-                              <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                <Clock size={9} />
-                                {event.timestamp}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-10 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        No timeline events yet.
-                      </p>
-                    </div>
-                  )}
+                <div className="px-6 py-10 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No messages yet.
+                  </p>
                 </div>
               )}
             </div>
+
+            {/* Compose */}
+            {selected.status !== "closed" && (
+              <div className="border-t border-border/60 px-6 py-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSend();
+                  }}
+                  className="flex items-center gap-3"
+                >
+                  <input
+                    type="text"
+                    value={compose}
+                    onChange={(e) => setCompose(e.target.value)}
+                    placeholder="Type a message..."
+                    className="flex-1 rounded-[var(--radius)] border border-border/60 bg-muted/20 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-border"
+                    disabled={sending}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!compose.trim() || sending}
+                    className="flex h-10 w-10 items-center justify-center rounded-[var(--radius)] bg-primary text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {sending ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Send size={14} />
+                    )}
+                  </button>
+                </form>
+              </div>
+            )}
           </>
         ) : (
           /* Empty state */
