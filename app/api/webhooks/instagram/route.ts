@@ -72,7 +72,7 @@ async function findOwnerByInstagramId(igUserId: string) {
   return data;
 }
 
-async function resolveInstagramName(igUserId: string): string | null {
+async function resolveInstagramName(igUserId: string): Promise<string | null> {
   return null;
 }
 
