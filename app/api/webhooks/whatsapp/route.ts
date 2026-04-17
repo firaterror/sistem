@@ -138,7 +138,7 @@ async function insertMessage(
     .update({
       last_message_text: content.slice(0, 200),
       last_message_at: new Date().toISOString(),
-      unread_count: supabaseAdmin.rpc ? 1 : 1,
+      unread_count: 1,
       updated_at: new Date().toISOString(),
     })
     .eq("id", conversationId);
